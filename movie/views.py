@@ -1,14 +1,52 @@
 import matplotlib.pyplot as plt
 import matplotlib
-import io
 import urllib, base64
+import numpy as np
+import io
+import os
 from django.shortcuts import render
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from collections import Counter
-
-
-
 from .models import Movie
+from openai import OpenAI
+from dotenv import load_dotenv
+
+
+load_dotenv('./api_keys.env')
+client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
+
+def cosine_similarity(a, b):
+    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+
+def recommend_movie(request):
+    best_movie = None  # Definir fuera del if para evitar errores
+    max_similarity = -1  
+
+    if request.method == 'POST':
+        prompt = request.POST.get('prompt', '')
+
+        # Generar embedding del prompt
+        response = client.embeddings.create(
+            input=[prompt],
+            model="text-embedding-3-small"
+        )
+        prompt_emb = np.array(response.data[0].embedding, dtype=np.float32)
+
+        # Buscar película más similar
+        for movie in Movie.objects.all():
+            if movie.emb:
+                movie_emb = np.frombuffer(movie.emb, dtype=np.float32)
+                similarity = cosine_similarity(prompt_emb, movie_emb)
+
+                if similarity > max_similarity:
+                    max_similarity = similarity
+                    best_movie = movie
+
+    return render(request, "recommend.html", {
+        "title": best_movie.title if best_movie else "No se encontró una película",
+        "similarity": round(float(max_similarity), 4) if best_movie else "N/A"
+    })
+
 
 # Create your views here.
 def home (request):
