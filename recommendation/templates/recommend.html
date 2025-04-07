@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<form method="post" class="mb-4">
+    {% csrf_token %}
+    <label for="prompt" class="form-label">Describe la película que buscas:</label>
+    <input type="text" class="form-control mb-2" name="prompt" placeholder="Ej. película de robots en el futuro" required>
+    <button type="submit" class="btn btn-success">Buscar</button>
+</form>
+
+
+<div class="container mt-4">
+    <h2>Película recomendada</h2>
+
+    {% if movie %}
+        <div class="card mx-auto" style="max-width: 600px;">
+            <img class="card-img-top" src="{{ movie.image.url }}" alt="{{ movie.title }}">
+            <div class="card-body">
+                <h5 class="card-title fw-bold">{{ movie.title }}</h5>
+                <p class="card-text">{{ movie.description }}</p>
+                <p class="card-text"><strong>Year:</strong> {{ movie.year }}</p>
+                <p class="card-text"><strong>Genre:</strong> {{ movie.genre }}</p>
+                <p class="card-text"><strong>Similitud:</strong> {{ similarity }}</p>
+                {% if movie.url %}
+                    <a href="{{ movie.url }}" class="btn btn-primary">Ver película</a>
+                {% endif %}
+            </div>
+        </div>
+    {% else %}
+        <p>No se encontró una película similar.</p>
+    {% endif %}
+</div>
+
+
+
+{% endblock content %}
